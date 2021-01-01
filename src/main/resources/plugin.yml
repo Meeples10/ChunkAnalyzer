@@ -1,0 +1,12 @@
+name: ChunkAnalyzer
+main: io.github.meeples10.chunkanalyzer
+version: %PROJECT_VERSION%
+author: Meeples10
+description: %PROJECT_DESCRIPTION%
+api-version: 1.16
+commands:
+  chunkanalyzer:
+    description: Main ChunkAnalyzer command
+    usage: /chunkanalyzer
+    aliases: [ca]
+    default: true
