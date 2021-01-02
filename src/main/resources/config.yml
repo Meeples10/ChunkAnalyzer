@@ -1,0 +1,4 @@
+world: world
+height-limit: 256
+message-frequency: 1000
+stop-after: 400000

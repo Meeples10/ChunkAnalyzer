@@ -9,6 +9,8 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,25 +25,39 @@ public class Main extends JavaPlugin implements Listener {
     private static int count = 0;
     private static List<Vector2> analyzed = new ArrayList<Vector2>();
     private static HashMap<String, HashMap<Integer, Long>> blockCounts = new HashMap<String, HashMap<Integer, Long>>();
+    private static String world = "world";
+    private static int heightLimit = 256;
+    private static int messageFrequency = 1000;
+    private static int stopAfter = 400000;
 
     @Override
     public void onEnable() {
         this.getCommand("chunkanalyzer").setExecutor(new CommandCA());
         Bukkit.getPluginManager().registerEvents(this, this);
+        File cfg = new File(getDataFolder(), "config.yml");
+        if(!cfg.exists()) {
+            getDataFolder().mkdirs();
+            saveDefaultConfig();
+        }
+        FileConfiguration c = YamlConfiguration.loadConfiguration(cfg);
+        world = c.getString("world");
+        heightLimit = c.getInt("height-limit");
+        messageFrequency = c.getInt("message-frequency");
+        stopAfter = c.getInt("stop-after");
     }
 
     @Override
     public void onDisable() {
         long time = System.currentTimeMillis();
-        File f = new File("block-distributions-" + time + ".csv");
+        File f = new File(getDataFolder(), "block-distributions-" + world + "-" + time + ".csv");
         String s = "id";
-        for(int i = 0; i < 256; i++) {
+        for(int i = 0; i < heightLimit; i++) {
             s += "," + i;
         }
         long blockCount = 0;
         for(String key : blockCounts.keySet()) {
             s += "\n" + key;
-            for(int i = 0; i < 256; i++) {
+            for(int i = 0; i < heightLimit; i++) {
                 if(!blockCounts.get(key).containsKey(i)) {
                     s += ",0";
                     continue;
@@ -51,7 +67,7 @@ public class Main extends JavaPlugin implements Listener {
             }
         }
         writeFile(f, s);
-        File stats = new File("stats-" + time + ".log");
+        File stats = new File(getDataFolder(), "statistics-" + time + ".log");
         writeFile(stats, "Chunks analyzed: " + count + "\nTotal blocks: " + blockCount + "\nUnique block types: "
                 + blockCounts.size());
     }
@@ -81,13 +97,14 @@ public class Main extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent e) {
+        if(count >= stopAfter) return;
         Chunk c = e.getChunk();
         if(alreadyAnalyzed(c.getX(), c.getZ())) return;
-        if(!c.getWorld().getName().equals("world")) return;
+        if(!c.getWorld().getName().equals(world)) return;
         count++;
         for(int x = 0; x < 16; x++) {
             for(int z = 0; z < 16; z++) {
-                for(int y = 0; y < 256; y++) {
+                for(int y = 0; y < heightLimit; y++) {
                     String key = c.getBlock(x, y, z).getType().getKey().getKey();
                     if(!blockCounts.containsKey(key)) {
                         blockCounts.put(key, new HashMap<Integer, Long>());
@@ -103,7 +120,7 @@ public class Main extends JavaPlugin implements Listener {
         broadcast(
                 "ChunkLoadEvent: [" + ChatColor.GREEN + c.getX() + ChatColor.RESET + ", " + ChatColor.GREEN + c.getZ()
                         + ChatColor.WHITE + "] (#" + ChatColor.YELLOW + count + ChatColor.RESET + ")",
-                count % 1000 == 0);
+                count % messageFrequency == 0);
     }
 
     private static boolean alreadyAnalyzed(int x, int z) {

@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.meeples10.chunkanalyzer</groupId>
 	<artifactId>ChunkAnalyzer</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>ChunkAnalyzer</name>
 	<description>Analyzes the block distribution of loaded chunks and saves it to a file.</description>
 	<build>
