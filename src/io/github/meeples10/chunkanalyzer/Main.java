@@ -32,7 +32,7 @@ public class Main extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
-        File f = new File("block-distributions-" + System.currentTimeMillis() + ".yml");
+        File f = new File("block-distributions-" + System.currentTimeMillis() + ".csv");
         String s = "id";
         for(int i = 0; i < 256; i++) {
             s += "," + i;
