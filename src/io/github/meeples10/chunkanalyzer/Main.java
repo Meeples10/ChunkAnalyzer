@@ -32,14 +32,17 @@ public class Main extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
-        File f = new File("block-distributions-" + System.currentTimeMillis() + ".csv");
+        long time = System.currentTimeMillis();
+        File f = new File("block-distributions-" + time + ".csv");
         String s = "id";
         for(int i = 0; i < 256; i++) {
             s += "," + i;
         }
+        long blockCount = 0;
         for(String key : blockCounts.keySet()) {
             s += "\n" + key;
             for(int i = 0; i < 256; i++) {
+                blockCount++;
                 if(!blockCounts.get(key).containsKey(i)) {
                     s += ",0";
                     continue;
@@ -47,6 +50,13 @@ public class Main extends JavaPlugin implements Listener {
                 s += "," + blockCounts.get(key).get(i);
             }
         }
+        writeFile(f, s);
+        File stats = new File("stats-" + time + ".log");
+        writeFile(stats, "Chunks analyzed: " + count + "\nTotal blocks: " + blockCount + "\nUnique block types: "
+                + blockCounts.size());
+    }
+
+    private static void writeFile(File f, String s) {
         FileWriter out = null;
         try {
             out = new FileWriter(f);
@@ -60,11 +70,13 @@ public class Main extends JavaPlugin implements Listener {
         }
     }
 
-    public static void broadcast(String s) {
-        for(Player p : Bukkit.getServer().getOnlinePlayers()) {
-            p.sendMessage(s);
-        }
+    public static void broadcast(String s, boolean players) {
         Bukkit.getPluginManager().getPlugin(NAME).getLogger().info(s);
+        if(players) {
+            for(Player p : Bukkit.getServer().getOnlinePlayers()) {
+                p.sendMessage(s);
+            }
+        }
     }
 
     @EventHandler
@@ -88,8 +100,10 @@ public class Main extends JavaPlugin implements Listener {
                 }
             }
         }
-        broadcast("ChunkLoadEvent: [" + ChatColor.GREEN + c.getX() + ChatColor.RESET + ", " + ChatColor.GREEN + c.getZ()
-                + ChatColor.WHITE + "] (#" + ChatColor.YELLOW + count + ChatColor.RESET + ")");
+        broadcast(
+                "ChunkLoadEvent: [" + ChatColor.GREEN + c.getX() + ChatColor.RESET + ", " + ChatColor.GREEN + c.getZ()
+                        + ChatColor.WHITE + "] (#" + ChatColor.YELLOW + count + ChatColor.RESET + ")",
+                count % 1000 == 0);
     }
 
     private static boolean alreadyAnalyzed(int x, int z) {
