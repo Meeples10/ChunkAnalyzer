@@ -42,11 +42,11 @@ public class Main extends JavaPlugin implements Listener {
         for(String key : blockCounts.keySet()) {
             s += "\n" + key;
             for(int i = 0; i < 256; i++) {
-                blockCount++;
                 if(!blockCounts.get(key).containsKey(i)) {
                     s += ",0";
                     continue;
                 }
+                blockCount += blockCounts.get(key).get(i);
                 s += "," + blockCounts.get(key).get(i);
             }
         }
