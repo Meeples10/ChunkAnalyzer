@@ -1,5 +1,5 @@
 name: ChunkAnalyzer
-main: io.github.meeples10.chunkanalyzer
+main: io.github.meeples10.chunkanalyzer.Main
 version: %PROJECT_VERSION%
 author: Meeples10
 description: %PROJECT_DESCRIPTION%
