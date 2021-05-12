@@ -10,10 +10,15 @@ message-frequency: 1000
 print-to-console: true
 # Stop counting after this many chunks
 # Set to 0 to continue until the server is manually stopped
-stop-after: 400000
+# May not be larger than 2147483647
+stop-after: 0
 # The number of ticks to wait before teleporting the player
 # Setting this below 40 is not recommended for higher view distances
 teleport-delay: 40
 # The distance to teleport the player, in chunks
 # Set to 0 to use half of the view-distance value defined in server.properties
 teleport-distance: 0
+# To prevent lag when generating chunks with a very large spiral,
+# the points of the spiral are generated on server startup
+# Setting this to very large values may cause the server to hang on startup
+pregenerate-spiral-points: 65536

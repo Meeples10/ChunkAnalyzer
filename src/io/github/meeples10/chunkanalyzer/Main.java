@@ -37,6 +37,8 @@ public class Main extends JavaPlugin implements Listener {
     private static int stopAfter = 400000;
     private static long teleportDelay = 30;
     private static int teleportDistance = 0;
+    private static int pregenerateSpiralPoints = 0;
+    private static List<Vector2> spiralPoints = new ArrayList<Vector2>();
     private static int spiralSteps = 0;
     private static BukkitTask spiralTask;
 
@@ -59,9 +61,17 @@ public class Main extends JavaPlugin implements Listener {
         if(stopAfter == 0) stopAfter = Integer.MAX_VALUE;
         teleportDelay = c.getLong("teleport-delay");
         teleportDistance = c.getInt("teleport-distance");
+        pregenerateSpiralPoints = c.getInt("pregenerate-spiral-points");
         if(teleportDistance == 0) {
             teleportDistance = Bukkit.getServer().getViewDistance() / 2;
         }
+        getLogger().info("Generating spiral points");
+        long genTime = System.currentTimeMillis();
+        for(int i = 0; i < pregenerateSpiralPoints; i++) {
+            spiralPoints.add(generateSpiralStep(i));
+        }
+        getLogger().info("Generated " + spiralPoints.size() + " points in "
+                + ((System.currentTimeMillis() - genTime) / 1000) + " seconds");
     }
 
     @Override
@@ -157,15 +167,13 @@ public class Main extends JavaPlugin implements Listener {
      * Credit to davedwards (https://stackoverflow.com/users/1248974/davedwards) on
      * StackOverflow for this spiral code: https://stackoverflow.com/a/45333503
      */
-    public static Vector2 spiral(int step) {
+    public static Vector2 generateSpiralStep(int step) {
         int dx = 0;
         int dz = 1;
         int segmentLength = 1;
         int x = 0;
         int z = 0;
         int segmentPassed = 0;
-        // FIXME: loop causes severe lag spikes after plugin has been running for some
-        // time
         for(int n = 0; n < step; ++n) {
             x += dx;
             z += dz;
@@ -191,7 +199,7 @@ public class Main extends JavaPlugin implements Listener {
         spiralTask = new BukkitRunnable() {
             @Override
             public void run() {
-                Vector2 v = spiral(spiralSteps);
+                Vector2 v = spiralPoints.get(spiralSteps);
                 for(Player p : Bukkit.getServer().getOnlinePlayers()) {
                     p.teleport(new Location(world, v.x * 16.0 * teleportDistance, 64.0, v.z * 16.0 * teleportDistance));
                 }
