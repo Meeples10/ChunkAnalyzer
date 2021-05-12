@@ -66,6 +66,9 @@ public class Main extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
+        if(spiralTask != null && !spiralTask.isCancelled()) {
+            spiralTask.cancel();
+        }
         long time = System.currentTimeMillis();
         File f = new File(getDataFolder(), "block-distributions-" + worldName + "-" + time + ".csv");
         String s = "id";
@@ -161,6 +164,8 @@ public class Main extends JavaPlugin implements Listener {
         int x = 0;
         int z = 0;
         int segmentPassed = 0;
+        // FIXME: loop causes severe lag spikes after plugin has been running for some
+        // time
         for(int n = 0; n < step; ++n) {
             x += dx;
             z += dz;
@@ -179,7 +184,7 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     public static void resetSpiral() {
-        if(spiralTask != null) {
+        if(spiralTask != null && !spiralTask.isCancelled()) {
             spiralTask.cancel();
         }
         spiralSteps = 0;
