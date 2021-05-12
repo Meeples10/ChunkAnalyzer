@@ -6,7 +6,7 @@ description: %PROJECT_DESCRIPTION%
 api-version: 1.16
 commands:
   chunkanalyzer:
-    description: Main ChunkAnalyzer command
+    description: Start teleporting the player out from [0, 0] in a spiral
     usage: /chunkanalyzer
     aliases: [ca]
     default: true

@@ -16,4 +16,8 @@ public class Vector2 {
     public boolean equals(int x, int z) {
         return x == this.x && z == this.z;
     }
+
+    public String toString() {
+        return "[" + x + ", " + z + "]";
+    }
 }

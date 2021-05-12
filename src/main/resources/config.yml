@@ -1,4 +1,19 @@
+# The name of the world to be analyzed
 world: world
+# Only analyze blocks at or below this y-level
 height-limit: 256
+# Send a message in chat after every nth chunk
+# Set to 0 to disable messages in chat
 message-frequency: 1000
+# Set to true to print a message to the server console
+# each time a chunk is loaded and processed
+print-to-console: true
+# Stop counting after this many chunks
+# Set to 0 to continue until the server is manually stopped
 stop-after: 400000
+# The number of ticks to wait before teleporting the player
+# Setting this below 40 is not recommended for higher view distances
+teleport-delay: 40
+# The distance to teleport the player, in chunks
+# Set to 0 to use half of the view-distance value defined in server.properties
+teleport-distance: 0

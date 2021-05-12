@@ -9,6 +9,8 @@ import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -16,6 +18,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 import net.md_5.bungee.api.ChatColor;
 
@@ -25,10 +29,16 @@ public class Main extends JavaPlugin implements Listener {
     private static int count = 0;
     private static List<Vector2> analyzed = new ArrayList<Vector2>();
     private static HashMap<String, HashMap<Integer, Long>> blockCounts = new HashMap<String, HashMap<Integer, Long>>();
-    private static String world = "world";
+    private static String worldName = "world";
+    private static World world;
     private static int heightLimit = 256;
     private static int messageFrequency = 1000;
+    private static boolean printToConsole = false;
     private static int stopAfter = 400000;
+    private static long teleportDelay = 30;
+    private static int teleportDistance = 0;
+    private static int spiralSteps = 0;
+    private static BukkitTask spiralTask;
 
     @Override
     public void onEnable() {
@@ -40,16 +50,24 @@ public class Main extends JavaPlugin implements Listener {
             saveDefaultConfig();
         }
         FileConfiguration c = YamlConfiguration.loadConfiguration(cfg);
-        world = c.getString("world");
+        worldName = c.getString("world");
+        world = Bukkit.getServer().getWorld(worldName);
         heightLimit = c.getInt("height-limit");
         messageFrequency = c.getInt("message-frequency");
+        printToConsole = c.getBoolean("print-to-console");
         stopAfter = c.getInt("stop-after");
+        if(stopAfter == 0) stopAfter = Integer.MAX_VALUE;
+        teleportDelay = c.getLong("teleport-delay");
+        teleportDistance = c.getInt("teleport-distance");
+        if(teleportDistance == 0) {
+            teleportDistance = Bukkit.getServer().getViewDistance() / 2;
+        }
     }
 
     @Override
     public void onDisable() {
         long time = System.currentTimeMillis();
-        File f = new File(getDataFolder(), "block-distributions-" + world + "-" + time + ".csv");
+        File f = new File(getDataFolder(), "block-distributions-" + worldName + "-" + time + ".csv");
         String s = "id";
         for(int i = 0; i < heightLimit; i++) {
             s += "," + i;
@@ -87,8 +105,10 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     public static void broadcast(String s, boolean players) {
-        Bukkit.getPluginManager().getPlugin(NAME).getLogger().info(s);
-        if(players) {
+        if(printToConsole) {
+            Bukkit.getPluginManager().getPlugin(NAME).getLogger().info(s);
+        }
+        if(messageFrequency != 0 && players) {
             for(Player p : Bukkit.getServer().getOnlinePlayers()) {
                 p.sendMessage(s);
             }
@@ -100,7 +120,7 @@ public class Main extends JavaPlugin implements Listener {
         if(count >= stopAfter) return;
         Chunk c = e.getChunk();
         if(alreadyAnalyzed(c.getX(), c.getZ())) return;
-        if(!c.getWorld().getName().equals(world)) return;
+        if(!c.getWorld().equals(world)) return;
         count++;
         for(int x = 0; x < 16; x++) {
             for(int z = 0; z < 16; z++) {
@@ -128,5 +148,50 @@ public class Main extends JavaPlugin implements Listener {
             if(v.equals(x, z)) return true;
         }
         return false;
+    }
+
+    /**
+     * Credit to davedwards (https://stackoverflow.com/users/1248974/davedwards) on
+     * StackOverflow for this spiral code: https://stackoverflow.com/a/45333503
+     */
+    public static Vector2 spiral(int step) {
+        int dx = 0;
+        int dz = 1;
+        int segmentLength = 1;
+        int x = 0;
+        int z = 0;
+        int segmentPassed = 0;
+        for(int n = 0; n < step; ++n) {
+            x += dx;
+            z += dz;
+            ++segmentPassed;
+            if(segmentPassed == segmentLength) {
+                segmentPassed = 0;
+                int buffer = dz;
+                dz = -dx;
+                dx = buffer;
+                if(dx == 0) {
+                    ++segmentLength;
+                }
+            }
+        }
+        return new Vector2(x, z);
+    }
+
+    public static void resetSpiral() {
+        if(spiralTask != null) {
+            spiralTask.cancel();
+        }
+        spiralSteps = 0;
+        spiralTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                Vector2 v = spiral(spiralSteps);
+                for(Player p : Bukkit.getServer().getOnlinePlayers()) {
+                    p.teleport(new Location(world, v.x * 16.0 * teleportDistance, 64.0, v.z * 16.0 * teleportDistance));
+                }
+                spiralSteps++;
+            }
+        }.runTaskTimer(Bukkit.getPluginManager().getPlugin(NAME), 0, teleportDelay);
     }
 }
